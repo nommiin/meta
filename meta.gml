@@ -4,10 +4,13 @@ global.__metaChunks__ = undefined;
 global.__metaStrings__ = undefined;
 global.__metaSprites__ = undefined;
 global.__metaObjects__ = undefined;
+global.__metaAudioGroups__ = undefined;
+global.__metaSounds__ = undefined;
+global.__metaSequences__ = undefined;
 
 global.__metaHandlers__ = new (function() constructor {
 	// Members
-	static Order = ["STRG", "SPRT", "OBJT"];
+	static Order = ["STRG", "SPRT", "OBJT", "AGRP", "SOND", "SEQN"];
 	
 	// Handlers
 	static STRG = function( _chunk ) {
@@ -32,6 +35,30 @@ global.__metaHandlers__ = new (function() constructor {
 		meta_kvp(global.__metaBuffer__, function( _buffer, _index ) {
 			var _metaObject = new meta_object(_buffer);
 			global.__metaObjects__[? _index] = _metaObject;
+		});
+	}
+	
+	static AGRP = function( _chunk ) {
+		global.__metaAudioGroups__ = [];
+		meta_kvp(global.__metaBuffer__, function( _buffer, _index ) {
+			global.__metaAudioGroups__[_index] = meta_string(_buffer);
+		});
+	}
+	
+	static SOND = function( _chunk ) {
+		global.__metaSounds__ = ds_map_create();
+		meta_kvp(global.__metaBuffer__, function( _buffer, _index ) {
+			var _metaSound = new meta_sound(_buffer);
+			global.__metaSounds__[? _index] = _metaSound;
+		});
+	}
+	
+	static SEQN = function( _chunk ) {
+		buffer_seek(global.__metaBuffer__, buffer_seek_relative, 4); // ???
+		global.__metaSequences__ = ds_map_create();
+		meta_kvp(global.__metaBuffer__, function( _buffer, _index ) {
+			var _metaSequence = new meta_sequence(_buffer);
+			global.__metaSequences__[? _index] = _metaSequence;
 		});
 	}
 	
@@ -73,7 +100,21 @@ function meta_object( _buffer ) constructor {
 	self.Persistent = buffer_read(_buffer, buffer_u32) == 1;
 	self.Parent = buffer_read(_buffer, buffer_s32);
 	self.Mask = buffer_read(_buffer, buffer_s32);
-	show_debug_message(self);
+}
+
+function meta_sound( _buffer ) constructor {
+	self.Name = meta_string(_buffer);
+	self.Type = buffer_read(_buffer, buffer_u32);
+	self.Extension = meta_string(_buffer);
+	self.Filename = meta_string(_buffer);
+	self.Effects = buffer_read(_buffer, buffer_u32);
+	self.Volume = buffer_read(_buffer, buffer_f32);
+	self.Pan = buffer_read(_buffer, buffer_f32);
+	self.Group = global.__metaAudioGroups__[buffer_read(_buffer, buffer_u32)];
+}
+
+function meta_sequence( _buffer ) constructor {
+	self.Name = meta_string(_buffer);
 }
 
 // Functions
@@ -112,7 +153,6 @@ function meta_parse( _path ) {
 			for(var i = 0; i < array_length(global.__metaHandlers__.Order); i++) {
 				var _chunkName = global.__metaHandlers__.Order[i], _chunkGet = global.__metaChunks__[? _chunkName];
 				if (_chunkGet != undefined && variable_struct_exists(global.__metaHandlers__, _chunkName) == true) {
-					show_debug_message("Parse: " + string(_chunkName));
 					buffer_seek(global.__metaBuffer__, buffer_seek_start, _chunkGet.Base);
 					variable_struct_get(global.__metaHandlers__, _chunkName)(_chunkGet);
 				}
@@ -138,6 +178,10 @@ function meta_kvp( _buffer, _handler, _index ) {
 meta_init();
 
 // Extension
+/// @function sprite_get_bbox_mode(ind)
+/// @description Retrieves the mode (shape) of the given sprite
+/// @argument {number} ind The index of the sprite
+/// @returns sprite_bbox_mode macro (auto, full, manual)
 function sprite_get_bbox_mode(ind) {
 	#macro sprite_bbox_mode_auto 0
 	#macro sprite_bbox_mode_full 1
@@ -148,6 +192,10 @@ function sprite_get_bbox_mode(ind) {
 	} else throw "Could not find sprite with index '" + string(ind) + "'.";
 }
 
+/// @function sprite_get_bbox_type(ind)
+/// @description Retrieves the type of collisions the sprite performs
+/// @argument {number} ind The index of the sprite
+/// @returns {number} sprite_bbox_type macro (rect, precise, rectrot)
 function sprite_get_bbox_type(ind) {
 	#macro sprite_bbox_type_rect 0
 	#macro sprite_bbox_type_precise 1
@@ -158,6 +206,10 @@ function sprite_get_bbox_type(ind) {
 	} else throw "Could not find sprite with index '" + string(ind) + "'.";
 }
 
+/// @function object_get_children(ind)
+/// @description Creates an array of all children belonging to the given object
+/// @argument {number} ind The index of the object
+/// @returns {array} Array containing object indices of all children
 function object_get_children(ind) {
 	var _metaChildren = [];
 	for(var i = ds_map_find_first(global.__metaObjects__); i != undefined; i = ds_map_find_next(global.__metaObjects__, i)) {
@@ -168,5 +220,24 @@ function object_get_children(ind) {
 	return _metaChildren;
 }
 
-show_debug_message(sprite_get_bbox_mode(Sprite1));
-show_debug_message(sprite_get_bbox_type(Sprite1));
+/// @function audio_sound_get_audiogroup(ind)
+/// @description Retrieves the name of the audiogroup that a sound belongs to
+/// @argument {number} ind The index of the sound
+/// @returns {string} The name of the audiogroup for the sound
+function audio_sound_get_audiogroup(ind) {
+	var _metaSound = global.__metaSounds__[? ind];
+	if (_metaSound != undefined) {
+		return _metaSound.Group;
+	} else throw "Could not find sound with index '" + string(ind) + "'."
+}
+
+/// @function sequence_get_name(ind)
+/// @description Retrieves the name of a given sequence
+/// @argument {number} ind The index of the sequence
+/// @returns {string} The name of the sequence
+function sequence_get_name(ind) {
+	var _metaSequence = global.__metaSequences__[? ind];
+	if (_metaSequence != undefined) {
+		return _metaSequence.Name;
+	} else throw "Could not find sequence with index '" + string(ind) + "'.";
+}
