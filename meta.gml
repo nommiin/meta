@@ -1,3 +1,13 @@
+// Runtime
+switch (GM_runtime_version) {
+	case "23.1.1.110": case "23.1.1.111":
+	case "23.1.1.115": case "23.1.1.116": break;
+	default: {
+		repeat (4) show_debug_message("[WARNING]: meta does not support the runtime version '" + GM_runtime_version + "', unexpected errors may occur.");
+		break;	
+	}
+}
+
 // Globals
 global.__metaBuffer__ = undefined;
 global.__metaChunks__ = undefined;
