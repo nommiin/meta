@@ -176,6 +176,7 @@ function meta_kvp( _buffer, _handler, _index ) {
 }
 
 meta_init();
+buffer_delete(global.__metaBuffer__);
 
 // Extension
 /// @function sprite_get_bbox_mode(ind)
