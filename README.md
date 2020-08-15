@@ -1,6 +1,6 @@
 # meta
 A GameMaker 2.3 extension that allows for runtime asset inspection, intended to fill in the gaps for asset-related functions that might be missing.<br>
-**This extension is still heavily in development and is subject to changes and additions.**
+**This extension is still heavily in development and is subject to changes and additions.<br>Additionally, due to the nature of this extension; runtime updates can break chunk parsing. At the current time of development, this extension targets runtimes 23.1.1.160 through 23.1.1.166**
 
 # Functions
 ## sprite_get_bbox_mode
